@@ -1,4 +1,4 @@
-from models import VllmDecoder
+from .models import VllmDecoder
 from textattack.models.wrappers import ModelWrapper
 
 

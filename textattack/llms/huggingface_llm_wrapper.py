@@ -13,7 +13,7 @@ class HuggingFaceLLMWrapper(ModelWrapper):
         self.model = model
         self.tokenizer = tokenizer
 
-    def __call__(self, text_input_list):
+    def __call__(self, text_input_list, **kwargs):
         """Returns a list of responses to the given input list."""
         model_device = next(self.model.parameters()).device
         input_ids = self.tokenizer(text_input_list, return_tensors="pt").input_ids

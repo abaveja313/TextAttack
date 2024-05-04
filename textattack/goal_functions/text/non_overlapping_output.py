@@ -5,10 +5,6 @@ Goal Function for seq2sick
 """
 
 import functools
-import time
-
-from evalplus.data import get_human_eval_plus, get_human_eval_plus_hash
-from evalplus.evaluate import get_groundtruth, check_correctness
 import numpy as np
 
 from textattack.shared.utils import words_from_text

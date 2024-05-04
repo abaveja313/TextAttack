@@ -13,7 +13,7 @@ class TestcaseFailOutputGoalFunction(TextToTextGoalFunction):
 
     We will use self.ground_truth_output to represent task_id which we correlate with problem.
     """
-    DATASET_PARAMS = dict(mini=True, noextreme=True)
+    DATASET_PARAMS = dict(mini=True)
     HUMANEVAL = get_human_eval_plus(**DATASET_PARAMS)
     GROUNDTRUTH = get_groundtruth(HUMANEVAL, get_human_eval_plus_hash(**DATASET_PARAMS), [])
 

@@ -12,6 +12,7 @@ from .sentence_transformations import *
 from .word_swaps import *
 from .word_insertions import *
 from .word_merges import *
+from .code_transformations import *
 
 from .composite_transformation import CompositeTransformation
 from .word_deletion import WordDeletion

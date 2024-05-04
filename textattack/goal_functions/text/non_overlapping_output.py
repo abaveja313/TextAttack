@@ -5,7 +5,10 @@ Goal Function for seq2sick
 """
 
 import functools
+import time
 
+from evalplus.data import get_human_eval_plus, get_human_eval_plus_hash
+from evalplus.evaluate import get_groundtruth, check_correctness
 import numpy as np
 
 from textattack.shared.utils import words_from_text
@@ -37,12 +40,12 @@ class NonOverlappingOutput(TextToTextGoalFunction):
             return num_words_diff / len(get_words_cached(self.ground_truth_output))
 
 
-@functools.lru_cache(maxsize=2**12)
+@functools.lru_cache(maxsize=2 ** 12)
 def get_words_cached(s):
     return np.array(words_from_text(s))
 
 
-@functools.lru_cache(maxsize=2**12)
+@functools.lru_cache(maxsize=2 ** 12)
 def word_difference_score(s1, s2):
     """Returns the number of words that are non-overlapping between s1 and
     s2."""

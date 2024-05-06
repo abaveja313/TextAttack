@@ -2,6 +2,7 @@ import jedi
 import random
 import string
 
+from textattack.shared import AttackedText
 from textattack.transformations import Transformation
 
 
@@ -21,7 +22,8 @@ class VariableSwitchingTransformation(Transformation):
                      var.description.startswith('param '))
         )
 
-    def _get_transformations(self, current_text, indices_to_modify):
+    def _get_transformations(self, attacked_text, indices_to_modify):
+        current_text = attacked_text.text
         script = jedi.Script(current_text)
         variables = [var for var in script.get_names(all_scopes=True, definitions=True) if self.is_valid_variable(var)]
         refactorings = []
@@ -37,7 +39,7 @@ class VariableSwitchingTransformation(Transformation):
 
             refactorings.append(refactored_code)
 
-        return refactorings
+        return [AttackedText(r) for r in refactorings]
 
     @property
     def deterministic(self):

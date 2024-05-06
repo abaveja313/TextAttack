@@ -6,7 +6,7 @@ SkippedAttackResult Class
 
 from textattack.shared import utils
 
-from .attack_result import AttackResultx
+from .attack_result import AttackResult
 
 
 class SkippedAttackResult(AttackResult):

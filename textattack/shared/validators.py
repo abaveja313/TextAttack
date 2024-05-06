@@ -120,7 +120,9 @@ def transformation_consists_of_word_swaps(transformation):
     swaps."""
     from textattack.transformations import WordSwap, WordSwapGradientBased
 
-    return transformation_consists_of(transformation, [WordSwap, WordSwapGradientBased])
+    return transformation_consists_of(transformation, [
+        WordSwap, WordSwapGradientBased,
+    ])
 
 
 def transformation_consists_of_word_swaps_and_deletions(transformation):

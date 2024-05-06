@@ -1,1 +1,3 @@
 from .variable_switching import VariableSwitchingTransformation
+from .if_negation import IfStatementNegatingTransformation
+from .math_inversion import MathInversionTransformation

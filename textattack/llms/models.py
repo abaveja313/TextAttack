@@ -73,7 +73,7 @@ def make_chat_prompt(prompt: str, tokenizer: AutoTokenizer) -> str:
 ```
 """
     response = f"""\
-Below is the function body that solves the problem and passes correpsonding tests:
+Below is the completed function body that solves the problem and passes corresponding tests:
 ```python
 {func_decl}
 {_MAGIC_SPLITTER_}
@@ -197,6 +197,10 @@ class GeneralVllmDecoder(VllmDecoder):
 
     def multi_codegen(self, prompts: List[str], do_sample: bool = True) -> List[str]:
         fprompts = [make_chat_prompt(p, self.tokenizer) for p in prompts]
+        # for p in fprompts:
+        #     print(p)
+        #     print("---")
+
         vllm_outputs = self.llm.generate(
             fprompts,
             SamplingParams(

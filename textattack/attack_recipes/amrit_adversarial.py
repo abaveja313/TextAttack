@@ -6,15 +6,16 @@ Seq2Sick
 """
 
 from textattack import Attack
-from textattack.constraints.overlap import LevenshteinEditDistance
+from textattack.attack_recipes import AttackRecipe
+from textattack.constraints.overlap import LevenshteinEditDistance, MaxWordsPerturbed
 from textattack.constraints.pre_transformation import (
     RepeatModification,
     StopwordModification,
 )
 from textattack.goal_functions import TestcaseFailOutputGoalFunction
-from textattack.search_methods import GreedyWordSwapWIR
-from textattack.transformations import WordSwapEmbedding
-from .attack_recipe import AttackRecipe
+from textattack.search_methods import GreedySearch, BeamSearch, ParticleSwarmOptimization
+from textattack.transformations import VariableSwitchingTransformation, IfStatementNegatingTransformation, \
+    CompositeTransformation, MathInversionTransformation
 
 
 class AmritAdversarialAttack(AttackRecipe):
@@ -35,13 +36,20 @@ class AmritAdversarialAttack(AttackRecipe):
         # Goal is non-overlapping output.
         #
         goal_function = TestcaseFailOutputGoalFunction(model_wrapper)
-        # transformation = VariableSwitchingTransformation()
-        transformation = WordSwapEmbedding()
+        transformation = CompositeTransformation(
+            transformations=[
+                # VariableSwitchingTransformation(),
+                # IfStatementNegatingTransformation(),
+                MathInversionTransformation()
+            ]
+        )
+        # transformation = WordSwapEmbedding()
 
         #
         # Don't modify the same word twice or stopwords
         #
-        constraints = [RepeatModification(), StopwordModification(), LevenshteinEditDistance(30)]
+        constraints = [RepeatModification(), StopwordModification(),
+                       LevenshteinEditDistance(30), MaxWordsPerturbed(max_percent=0.10)]
         #
         # In these experiments, we hold the maximum difference
         # on edit distance (ϵ) to a constant 30 for each sample.
@@ -49,6 +57,6 @@ class AmritAdversarialAttack(AttackRecipe):
         #
         # Greedily swap words with "Word Importance Ranking".
         #
-        search_method = GreedyWordSwapWIR(wir_method="unk")
+        search_method = BeamSearch(beam_width=2)
 
         return Attack(goal_function, constraints, transformation, search_method)

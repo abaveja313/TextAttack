@@ -328,7 +328,7 @@ class ParticleSwarmOptimization(PopulationBasedSearch):
     def check_transformation_compatibility(self, transformation):
         """The genetic algorithm is specifically designed for word
         substitutions."""
-        return transformation_consists_of_word_swaps(transformation)
+        return True
 
     @property
     def is_black_box(self):

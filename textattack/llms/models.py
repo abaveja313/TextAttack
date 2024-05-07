@@ -67,7 +67,7 @@ def make_chat_prompt(prompt: str, tokenizer: AutoTokenizer) -> str:
     if tokenizer.chat_template is None:
         return prompt
 
-    prompt = f"""Complete the body of the Python function such that it passes corresponding tests. Write your code in a markdown code block, ending your response with ```. Exclude the function declaration and imports.
+    query = f"""Complete the body of the Python function such that it passes corresponding tests. Write your code in a markdown code block, ending your response with ```.
 ```python
 {prompt.strip()}
 ```
@@ -80,7 +80,7 @@ Below is the completed function body that solves the problem and passes correspo
 ```"""
     prompt = tokenizer.apply_chat_template(
         [
-            {"role": "user", "content": prompt},
+            {"role": "user", "content": query},
             {"role": "assistant", "content": response},
         ],
         tokenize=False,
@@ -94,7 +94,7 @@ class DecoderBase(ABC):
             name: str,
             batch_size: int = 1,
             temperature: float = 0.8,
-            max_new_tokens: int = 512,
+            max_new_tokens: int = 2048,
             dtype: str = "bfloat16",  # default
             trust_remote_code: bool = False,
     ) -> None:
@@ -169,24 +169,25 @@ class VllmDecoder(DecoderBase):
         batch_size = min(self.batch_size, num_samples)
 
         vllm_outputs = self.llm.generate(
-            [prompt] * batch_size,
+            prompt,
             SamplingParams(
                 temperature=self.temperature,
                 max_tokens=self.max_new_tokens,
                 top_p=0.95 if do_sample else 1.0,
                 stop=self.eos,
+                n=num_samples
             ),
             use_tqdm=False,
         )
 
-        gen_strs = [x.outputs[0].text.replace("\t", "    ") for x in vllm_outputs]
+        gen_strs = [x.text.replace("\t", "    ") for x in vllm_outputs[0].outputs]
         return gen_strs
 
 
 class GeneralVllmDecoder(VllmDecoder):
     def __init__(self, name: str, **kwargs) -> None:
         super().__init__(name, **kwargs)
-        self.eos += ["\n```\n"]
+        self.eos += ["\n```\n", '```']
         print(f"EOS strings: {self.eos}")
 
     def codegen(
@@ -197,9 +198,6 @@ class GeneralVllmDecoder(VllmDecoder):
 
     def multi_codegen(self, prompts: List[str], do_sample: bool = True) -> List[str]:
         fprompts = [make_chat_prompt(p, self.tokenizer) for p in prompts]
-        # for p in fprompts:
-        #     print(p)
-        #     print("---")
 
         vllm_outputs = self.llm.generate(
             fprompts,

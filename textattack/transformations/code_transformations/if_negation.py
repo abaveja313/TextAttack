@@ -1,12 +1,9 @@
 import ast
 import copy
-import warnings
 
 from textattack.shared import AttackedText
+from textattack.shared.utils import parse_stem
 from textattack.transformations import Transformation
-
-import ast
-import copy
 
 
 class BooleanTransformer(ast.NodeTransformer):
@@ -47,6 +44,10 @@ class BooleanTransformer(ast.NodeTransformer):
         elif isinstance(expr, ast.UnaryOp) and isinstance(expr.operand, (ast.BoolOp, ast.Compare)):
             simplified_expr = self.simplify_negation(expr)
             results.append(simplified_expr)
+        else:
+            # Handle generic truthy/falsy expressions
+            double_negation = self.apply_double_negation(expr)
+            results.append(double_negation)
         return results
 
     def apply_simple_negation(self, expr):
@@ -77,8 +78,12 @@ class BooleanTransformer(ast.NodeTransformer):
             for op in expr.ops:
                 if isinstance(op, ast.Is):
                     new_ops.append(ast.IsNot())
-                if isinstance(op, ast.IsNot):
+                elif isinstance(op, ast.IsNot):
                     new_ops.append(ast.Is())
+                elif isinstance(op, ast.In):
+                    new_ops.append(ast.NotIn())
+                elif isinstance(op, ast.NotIn):
+                    new_ops.append(ast.In())
                 elif isinstance(op, ast.Eq):
                     new_ops.append(ast.NotEq())
                 elif isinstance(op, ast.NotEq):
@@ -92,6 +97,10 @@ class BooleanTransformer(ast.NodeTransformer):
                 elif isinstance(op, ast.GtE):
                     new_ops.append(ast.Lt())
             return ast.Compare(left=expr.left, ops=new_ops, comparators=expr.comparators)
+
+    def apply_double_negation(self, expr):
+        # Apply double negation for truthy/falsy expressions
+        return ast.UnaryOp(op=ast.Not(), operand=ast.UnaryOp(op=ast.Not(), operand=expr))
 
     def invert(self, expr):
         if isinstance(expr, ast.UnaryOp) and isinstance(expr.op, ast.Not):
@@ -114,4 +123,5 @@ class IfStatementNegatingTransformation(Transformation):
         current_text = attacked_text.text
         transformer_nested = BooleanTransformer(current_text)
         refactorings = transformer_nested.transform()
-        return [AttackedText(r) for r in refactorings]
+        stems = [parse_stem(current_text, r) for r in refactorings]
+        return [AttackedText(r) for r in stems]

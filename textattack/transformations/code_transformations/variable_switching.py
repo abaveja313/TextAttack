@@ -1,8 +1,10 @@
-import jedi
 import random
 import string
 
+import jedi
+
 from textattack.shared import AttackedText
+from textattack.shared.utils import parse_stem
 from textattack.transformations import Transformation
 
 
@@ -39,7 +41,8 @@ class VariableSwitchingTransformation(Transformation):
 
             refactorings.append(refactored_code)
 
-        return [AttackedText(r) for r in refactorings]
+        stems = [parse_stem(current_text, r) for r in refactorings]
+        return [AttackedText(r) for r in stems]
 
     @property
     def deterministic(self):

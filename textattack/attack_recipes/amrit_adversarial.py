@@ -38,8 +38,8 @@ class AmritAdversarialAttack(AttackRecipe):
         goal_function = TestcaseFailOutputGoalFunction(model_wrapper)
         transformation = CompositeTransformation(
             transformations=[
-                # VariableSwitchingTransformation(),
-                # IfStatementNegatingTransformation(),
+                VariableSwitchingTransformation(),
+                IfStatementNegatingTransformation(),
                 MathInversionTransformation()
             ]
         )
@@ -48,8 +48,7 @@ class AmritAdversarialAttack(AttackRecipe):
         #
         # Don't modify the same word twice or stopwords
         #
-        constraints = [RepeatModification(), StopwordModification(),
-                       LevenshteinEditDistance(30), MaxWordsPerturbed(max_percent=0.10)]
+        constraints = [RepeatModification(), StopwordModification()]
         #
         # In these experiments, we hold the maximum difference
         # on edit distance (ϵ) to a constant 30 for each sample.

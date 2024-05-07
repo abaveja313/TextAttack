@@ -21,12 +21,11 @@ class TestcaseFailOutputGoalFunction(TextToTextGoalFunction):
         self.ground_truth = get_groundtruth(self.human_eval, get_human_eval_plus_hash(**dataset_params), [])
 
     @functools.lru_cache(maxsize=2 ** 12)
-    def get_test_score(self, *, task_id, model_output, is_completion=True):
+    def get_test_score(self, *, task_id, model_output, stem, is_completion=True):
         problem = self.human_eval[task_id]
-        prompt = problem['prompt']
 
         if is_completion:
-            solution = prompt + model_output
+            solution = stem + model_output
         else:
             solution = model_output
 
@@ -62,6 +61,7 @@ class TestcaseFailOutputGoalFunction(TextToTextGoalFunction):
     def _get_score(self, model_output, attacked_text):
         eval_score = self.get_test_score(
             task_id=self.ground_truth_output,
-            model_output=model_output
+            model_output=model_output,
+            stem=attacked_text.text
         )
         return eval_score

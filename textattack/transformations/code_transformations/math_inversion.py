@@ -2,6 +2,7 @@ import ast
 import copy
 
 from textattack.shared import AttackedText
+from textattack.shared.utils import parse_stem
 from textattack.transformations import Transformation
 
 
@@ -84,7 +85,8 @@ class MathInversionTransformation(Transformation):
         print("Applying math inversion transformation")
         current_text = attack_text.text
         variations = self.refactor_code(current_text)
-        return [AttackedText(variation) for variation in variations]
+        stems = [parse_stem(current_text, r) for r in variations]
+        return [AttackedText(variation) for variation in stems]
 
     @staticmethod
     def refactor_code(code):

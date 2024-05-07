@@ -12,7 +12,7 @@ from textattack.truth_initializers import TestPassingInitializer
 from loguru import logger
 
 logger.add(sys.stdout, format="{time} {file} {level} {message}")
-ground_truth_output = "HumanEval/112"
+ground_truth_output = "HumanEval/59"
 
 model = GeneralVllmDecoder(
     'deepseek-ai/deepseek-coder-1.3b-instruct',

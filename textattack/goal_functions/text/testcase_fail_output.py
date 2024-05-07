@@ -25,7 +25,10 @@ class TestcaseFailOutputGoalFunction(TextToTextGoalFunction):
         problem = self.human_eval[task_id]
 
         if is_completion:
-            solution = stem + model_output
+            if not stem.startswith('\n'):
+                solution = stem + '\n' + model_output
+            else:
+                solution = stem + model_output
         else:
             solution = model_output
 

@@ -48,7 +48,7 @@ class AmritAdversarialAttack(AttackRecipe):
         #
         # Don't modify the same word twice or stopwords
         #
-        constraints = [RepeatModification(), StopwordModification()]
+        constraints = [RepeatModification(), StopwordModification(), LevenshteinEditDistance(50)]
         #
         # In these experiments, we hold the maximum difference
         # on edit distance (ϵ) to a constant 30 for each sample.
@@ -56,6 +56,6 @@ class AmritAdversarialAttack(AttackRecipe):
         #
         # Greedily swap words with "Word Importance Ranking".
         #
-        search_method = BeamSearch(beam_width=2)
+        search_method = GreedySearch()
 
         return Attack(goal_function, constraints, transformation, search_method)

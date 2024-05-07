@@ -61,21 +61,40 @@ def extract_function_declaration(code):
     return last_line
 
 
-def make_chat_prompt(prompt: str, tokenizer: AutoTokenizer) -> str:
+def make_codegen_prompt(prompt: str, tokenizer: AutoTokenizer) -> str:
     # directly return prompt if it does not have a tokenizer.chat_template
     func_decl = extract_function_declaration(prompt)
     if tokenizer.chat_template is None:
         return prompt
 
-    query = f"""Complete the body of the Python function such that it passes corresponding tests. Write your code in a markdown code block, ending your response with ```.
+    query = f"""Complete the body of the Python function such that it passes corresponding tests. Write your code in a markdown code block, ending your response with ```. Don't include any testcases in your response.
 ```python
 {prompt.strip()}
 ```
 """
-    response = f"""\
-Below is the completed function body that solves the problem and passes corresponding tests:
+    response = f"""Below is the completed function body that solves the problem and passes corresponding tests:
 ```python
 {func_decl}
+{_MAGIC_SPLITTER_}
+```"""
+    prompt = tokenizer.apply_chat_template(
+        [
+            {"role": "user", "content": query},
+            {"role": "assistant", "content": response},
+        ],
+        tokenize=False,
+    ).split(_MAGIC_SPLITTER_)[0]
+    return prompt
+
+
+def make_stem_completion_prompt(prompt: str, tokenizer: AutoTokenizer) -> str:
+    if tokenizer.chat_template is None:
+        return prompt
+
+    query = f"""Complete the rest of the below function so it passes the corresponding tests. Write your code in a markdown code block, ending your response with ```. Start your response from the end of the code provided here. """
+    response = f"""Below is the rest of the function body such that it passes corresponding tests:
+```python
+{prompt.strip()}
 {_MAGIC_SPLITTER_}
 ```"""
     prompt = tokenizer.apply_chat_template(
@@ -143,7 +162,7 @@ class VllmDecoder(DecoderBase):
     def is_direct_completion(self) -> bool:
         return self.tokenizer.chat_template is None
 
-    def multi_codegen(
+    def complete_stems(
             self, prompts: List[str], do_sample: bool = True
     ) -> List[str]:
 
@@ -187,17 +206,17 @@ class VllmDecoder(DecoderBase):
 class GeneralVllmDecoder(VllmDecoder):
     def __init__(self, name: str, **kwargs) -> None:
         super().__init__(name, **kwargs)
-        self.eos += ["\n```\n", '```']
+        self.eos += ["\n```\n", '```', 'assert']
         print(f"EOS strings: {self.eos}")
 
     def codegen(
             self, prompt: str, do_sample: bool = True, num_samples: int = 200
     ) -> List[str]:
-        prompt = make_chat_prompt(prompt, self.tokenizer)
+        prompt = make_codegen_prompt(prompt, self.tokenizer)
         return VllmDecoder.codegen(self, prompt, do_sample, num_samples)
 
-    def multi_codegen(self, prompts: List[str], do_sample: bool = True) -> List[str]:
-        fprompts = [make_chat_prompt(p, self.tokenizer) for p in prompts]
+    def complete_stems(self, prompts: List[str], do_sample: bool = True) -> List[str]:
+        fprompts = [make_stem_completion_prompt(p, self.tokenizer) for p in prompts]
 
         vllm_outputs = self.llm.generate(
             fprompts,
@@ -299,7 +318,7 @@ class GenenralHfTorchDecoder(HfTorchDecoder):
     def codegen(
             self, prompt: str, do_sample: bool = True, num_samples: int = 200
     ) -> List[str]:
-        prompt = make_chat_prompt(prompt, self.tokenizer)
+        prompt = make_codegen_prompt(prompt, self.tokenizer)
         return HfTorchDecoder.codegen(self, prompt, do_sample, num_samples)
 
 

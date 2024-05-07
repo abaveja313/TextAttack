@@ -70,10 +70,15 @@ class TestPassingInitializer:
         transforms = (remove_comments_and_docstrings, normalize_indentation)
         processed = []
         for sequence in tqdm.tqdm(sequences, desc='Postprocessing Samples'):
-            result = sequence
-            for transform in transforms:
-                result = transform(result)
-            processed.append(result)
+            try:
+                result = sequence
+                for transform in transforms:
+                    result = transform(result)
+                processed.append(result)
+            except Exception:
+                logger.exception("Unable to postprocess sequence")
+                logger.warning(f"Solution:\n{sequence}")
+                continue
         return processed
 
     def find_centroid_solution(self):
@@ -89,7 +94,7 @@ class TestPassingInitializer:
         failed_stats = []
 
         for sequence in tqdm.tqdm(sequences, desc="Evaluating Sequences"):
-            full_solution = self.problem['prompt'] + indent_code(sequence)
+            full_solution = self.problem['prompt'] + sequence
             eval_results = check_correctness(
                 dataset='humaneval',
                 completion_id=time.time_ns(),

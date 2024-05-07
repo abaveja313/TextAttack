@@ -1,8 +1,6 @@
 import ast
 import difflib
 from typing import List
-import io
-import tokenize
 
 import tqdm
 

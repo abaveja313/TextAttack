@@ -1,6 +1,19 @@
 import ast
 import io
 import tokenize
+from typing import List
+
+
+def remove_pass(*, inputs: List[str]) -> List[str]:
+    results = []
+    for prompt in inputs:
+        prompt_lines = prompt.strip().splitlines()
+        if len(prompt_lines) > 0 and prompt_lines[-1].strip() == 'pass':
+            results.append('\n'.join(prompt_lines[:-1]))
+        else:
+            results.append(prompt)
+
+    return results
 
 
 def normalize_indentation(code: str) -> str:

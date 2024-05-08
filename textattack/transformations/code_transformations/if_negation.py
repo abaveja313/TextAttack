@@ -14,10 +14,20 @@ class BooleanTransformer(ast.NodeTransformer):
 
     def transform(self):
         for node in ast.walk(self.original_tree):
-            if isinstance(node, (ast.If, ast.While, ast.Assign)):
-                for target in [node.test] if hasattr(node, 'test') else [node.value]:
+            if isinstance(node, (ast.If, ast.While)):
+                for target in [node.test]:
+                    self.apply_transformations(node, target)
+            elif isinstance(node, ast.Assign) and self.is_boolean_assignment(node):
+                for target in [node.value]:
                     self.apply_transformations(node, target)
         return [ast.unparse(tree) for tree in self.transformations]
+
+    def is_boolean_assignment(self, node):
+        if isinstance(node.value, ast.UnaryOp) and isinstance(node.value.op, ast.Not):
+            return True
+        elif isinstance(node.value, ast.Compare):
+            return True
+        return False
 
     def apply_transformations(self, node, target):
         transformed = self.transform_expression(copy.deepcopy(target))
@@ -29,8 +39,8 @@ class BooleanTransformer(ast.NodeTransformer):
                         new_node.test = expr
                     else:
                         new_node.value = expr
+                    self.transformations.append(new_tree)
                     break
-            self.transformations.append(new_tree)
 
     def transform_expression(self, expr):
         results = []

@@ -67,7 +67,10 @@ class TestPassingInitializer:
         return sequences
 
     def postprocess_sequences(self, sequences: list[str]):
-        transforms = (remove_comments_and_docstrings, normalize_indentation)
+        transforms = (
+            lambda c: remove_comments_and_docstrings(c, remove_docstrings=True),
+            normalize_indentation
+        )
         processed = []
         for sequence in tqdm.tqdm(sequences, desc='Postprocessing Samples'):
             try:
@@ -133,10 +136,10 @@ class TestPassingInitializer:
 
         return centroid_solution
 
-    @staticmethod
-    def _print_failure_stats(fail_rates: list[float]):
+    def _print_failure_stats(self, fail_rates: list[float]):
         debug_message = [
             "Failure Rate Stats",
+            f"Failure Rate: {round(float(len(fail_rates)) / self.num_samples, 4) * 100}%",
             f"Mean: {np.mean(fail_rates)}",
             f"Median: {np.median(fail_rates)}",
             f"Stddev: {np.std(fail_rates)}"

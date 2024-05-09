@@ -11,8 +11,7 @@ from textattack.attack_recipes.amrit_adversarial import AmritAdversarialAttack
 from textattack.truth_initializers import TestPassingInitializer
 from loguru import logger
 
-logger.add(sys.stdout, format="{time} {file} {level} {message}")
-ground_truth_output = "HumanEval/142"
+ground_truth_output = "HumanEval/69"
 
 model = GeneralVllmDecoder(
     'deepseek-ai/deepseek-coder-1.3b-instruct',

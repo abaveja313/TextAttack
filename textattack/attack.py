@@ -4,7 +4,7 @@ Attack Class
 """
 
 from collections import OrderedDict
-from typing import List, Union
+from typing import List, Union, Type
 
 import lru
 import torch
@@ -78,13 +78,14 @@ class Attack:
     """
 
     def __init__(
-        self,
-        goal_function: GoalFunction,
-        constraints: List[Union[Constraint, PreTransformationConstraint]],
-        transformation: Transformation,
-        search_method: SearchMethod,
-        transformation_cache_size=2**15,
-        constraint_cache_size=2**15,
+            self,
+            goal_function: GoalFunction,
+            constraints: List[Union[Constraint, PreTransformationConstraint]],
+            transformation: Transformation,
+            search_method: SearchMethod,
+            attack_obj: Type[AttackedText] = AttackedText,
+            transformation_cache_size=2 ** 15,
+            constraint_cache_size=2 ** 15,
     ):
         """Initialize an attack object.
 
@@ -111,11 +112,11 @@ class Attack:
         self.search_method = search_method
         self.transformation = transformation
         self.is_black_box = (
-            getattr(transformation, "is_black_box", True) and search_method.is_black_box
+                getattr(transformation, "is_black_box", True) and search_method.is_black_box
         )
 
         if not self.search_method.check_transformation_compatibility(
-            self.transformation
+                self.transformation
         ):
             raise ValueError(
                 f"SearchMethod {self.search_method} incompatible with transformation {self.transformation}"
@@ -125,8 +126,8 @@ class Attack:
         self.pre_transformation_constraints = []
         for constraint in constraints:
             if isinstance(
-                constraint,
-                textattack.constraints.PreTransformationConstraint,
+                    constraint,
+                    textattack.constraints.PreTransformationConstraint,
             ):
                 self.pre_transformation_constraints.append(constraint)
             else:
@@ -161,6 +162,7 @@ class Attack:
         self.search_method.get_indices_to_order = self.get_indices_to_order
 
         self.search_method.filter_transformations = self.filter_transformations
+        self.attack_obj: Type[AttackedText] = attack_obj
 
     def clear_cache(self, recursive=True):
         self.constraints_cache.clear()
@@ -181,16 +183,16 @@ class Attack:
             if isinstance(obj, torch.nn.Module):
                 obj.cpu()
             elif isinstance(
-                obj,
-                (
-                    Attack,
-                    GoalFunction,
-                    Transformation,
-                    SearchMethod,
-                    Constraint,
-                    PreTransformationConstraint,
-                    ModelWrapper,
-                ),
+                    obj,
+                    (
+                            Attack,
+                            GoalFunction,
+                            Transformation,
+                            SearchMethod,
+                            Constraint,
+                            PreTransformationConstraint,
+                            ModelWrapper,
+                    ),
             ):
                 for key in obj.__dict__:
                     s_obj = obj.__dict__[key]
@@ -199,7 +201,7 @@ class Attack:
             elif isinstance(obj, (list, tuple)):
                 for item in obj:
                     if id(item) not in visited and isinstance(
-                        item, (Transformation, Constraint, PreTransformationConstraint)
+                            item, (Transformation, Constraint, PreTransformationConstraint)
                     ):
                         to_cpu(item)
 
@@ -214,16 +216,16 @@ class Attack:
             if isinstance(obj, torch.nn.Module):
                 obj.to(textattack.shared.utils.device)
             elif isinstance(
-                obj,
-                (
-                    Attack,
-                    GoalFunction,
-                    Transformation,
-                    SearchMethod,
-                    Constraint,
-                    PreTransformationConstraint,
-                    ModelWrapper,
-                ),
+                    obj,
+                    (
+                            Attack,
+                            GoalFunction,
+                            Transformation,
+                            SearchMethod,
+                            Constraint,
+                            PreTransformationConstraint,
+                            ModelWrapper,
+                    ),
             ):
                 for key in obj.__dict__:
                     s_obj = obj.__dict__[key]
@@ -232,7 +234,7 @@ class Attack:
             elif isinstance(obj, (list, tuple)):
                 for item in obj:
                     if id(item) not in visited and isinstance(
-                        item, (Transformation, Constraint, PreTransformationConstraint)
+                            item, (Transformation, Constraint, PreTransformationConstraint)
                     ):
                         to_cuda(item)
 
@@ -317,7 +319,7 @@ class Attack:
         )
 
     def _filter_transformations_uncached(
-        self, transformed_texts, current_text, original_text=None
+            self, transformed_texts, current_text, original_text=None
     ):
         """Filters a list of potential transformed texts based on
         ``self.constraints``
@@ -349,7 +351,7 @@ class Attack:
         return filtered_texts
 
     def filter_transformations(
-        self, transformed_texts, current_text, original_text=None
+            self, transformed_texts, current_text, original_text=None
     ):
         """Filters a list of potential transformed texts based on
         ``self.constraints`` Utilizes an LRU cache to attempt to avoid
@@ -436,7 +438,7 @@ class Attack:
             example, (str, OrderedDict, AttackedText)
         ), "`example` must either be `str`, `collections.OrderedDict`, `textattack.shared.AttackedText`."
         if isinstance(example, (str, OrderedDict)):
-            example = AttackedText(example)
+            example = self.attack_obj(example)
 
         assert isinstance(
             ground_truth_output, (int, str)

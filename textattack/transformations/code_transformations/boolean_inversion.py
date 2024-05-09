@@ -1,26 +1,41 @@
 import ast
-import copy
+from typing import Type
 
-from textattack.shared import AttackedText
-from textattack.shared.utils import parse_stem
-from textattack.transformations import Transformation
+from textattack.transformations.code_transformations.mutation import OneByOneVisitor, OneByOneTransformer
 
 
-class BooleanTransformer(ast.NodeTransformer):
-    def __init__(self, code):
-        self.code = code
-        self.transformations = []
-        self.original_tree = ast.parse(self.code)
+class BooleanInversionVisitor(OneByOneVisitor):
+    @property
+    def name(self):
+        return "BooleanTransformer"
 
-    def transform(self):
-        for node in ast.walk(self.original_tree):
-            if isinstance(node, (ast.If, ast.While)):
-                for target in [node.test]:
-                    self.apply_transformations(node, target)
-            elif isinstance(node, ast.Assign) and self.is_boolean_assignment(node):
-                for target in [node.value]:
-                    self.apply_transformations(node, target)
-        return [ast.unparse(tree) for tree in self.transformations]
+    def is_transformable(self, node):
+        return (isinstance(node, ast.If) or
+                isinstance(node, ast.While) or
+                (isinstance(node, ast.Assign) and self.is_boolean_assignment(node)))
+
+    def transform_expression(self, node: ast.expr):
+        if isinstance(node, ast.Compare):
+            inverted_expr = self.apply_inversion(node)
+            negated_expr = self.apply_simple_negation(inverted_expr)
+            return negated_expr
+        elif isinstance(node, ast.BoolOp):
+            demorgan_expr = self.apply_de_morgans_law(node)
+            return demorgan_expr
+        elif isinstance(node, ast.UnaryOp) and isinstance(node.operand, (ast.BoolOp, ast.Compare)):
+            simplified_expr = self.simplify_negation(node)
+            return simplified_expr
+        else:
+            # Handle generic truthy/falsy expressions
+            double_negation = self.apply_double_negation(node)
+            return double_negation
+
+    def transform_node(self, node: ast.AST):
+        if isinstance(node, (ast.If, ast.While)):
+            node.test = self.transform_expression(node.test)
+        elif isinstance(node, ast.Assign):
+            node.value = self.transform_expression(node.value)
+        return [node]
 
     def is_boolean_assignment(self, node):
         if isinstance(node.value, ast.UnaryOp) and isinstance(node.value.op, ast.Not):
@@ -28,37 +43,6 @@ class BooleanTransformer(ast.NodeTransformer):
         elif isinstance(node.value, ast.Compare):
             return True
         return False
-
-    def apply_transformations(self, node, target):
-        transformed = self.transform_expression(copy.deepcopy(target))
-        for expr in transformed:
-            new_tree = copy.deepcopy(self.original_tree)
-            for new_node in ast.walk(new_tree):
-                if isinstance(new_node, node.__class__) and ast.dump(new_node) == ast.dump(node):
-                    if hasattr(new_node, 'test'):
-                        new_node.test = expr
-                    else:
-                        new_node.value = expr
-                    self.transformations.append(new_tree)
-                    break
-
-    def transform_expression(self, expr):
-        results = []
-        if isinstance(expr, ast.Compare):
-            inverted_expr = self.apply_inversion(expr)
-            negated_expr = self.apply_simple_negation(inverted_expr)
-            results.append(negated_expr)
-        elif isinstance(expr, ast.BoolOp):
-            demorgan_expr = self.apply_de_morgans_law(expr)
-            results.append(demorgan_expr)
-        elif isinstance(expr, ast.UnaryOp) and isinstance(expr.operand, (ast.BoolOp, ast.Compare)):
-            simplified_expr = self.simplify_negation(expr)
-            results.append(simplified_expr)
-        else:
-            # Handle generic truthy/falsy expressions
-            double_negation = self.apply_double_negation(expr)
-            results.append(double_negation)
-        return results
 
     def apply_simple_negation(self, expr):
         return ast.UnaryOp(op=ast.Not(), operand=expr)
@@ -127,11 +111,7 @@ class BooleanTransformer(ast.NodeTransformer):
             return self.apply_inversion(expr)
 
 
-class IfStatementNegatingTransformation(Transformation):
-    def _get_transformations(self, attacked_text, indices_to_modify):
-        print("Applying if negation transformation")
-        current_text = attacked_text.text
-        transformer_nested = BooleanTransformer(current_text)
-        refactorings = transformer_nested.transform()
-        stems = [parse_stem(current_text, r) for r in refactorings]
-        return [AttackedText(r) for r in stems]
+class BooleanInversionTransformer(OneByOneTransformer):
+    @property
+    def visitor(self) -> Type[OneByOneVisitor]:
+        return BooleanInversionVisitor

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 import math
-from typing import Dict, Iterable, List, Optional, Set, Tuple
+from typing import Dict, Iterable, List, Optional, Set, Tuple, Callable
 
 import flair
 from flair.data import Sentence
@@ -143,14 +143,14 @@ class AttackedText:
 
         for word_idx, word in enumerate(self.words):
             assert (
-                word in flair_word_list
+                    word in flair_word_list
             ), "word absent in flair returned part-of-speech tags"
             word_idx_in_flair_tags = flair_word_list.index(word)
             if word_idx == desired_word_idx:
                 return flair_pos_list[word_idx_in_flair_tags]
             else:
-                flair_word_list = flair_word_list[word_idx_in_flair_tags + 1 :]
-                flair_pos_list = flair_pos_list[word_idx_in_flair_tags + 1 :]
+                flair_word_list = flair_word_list[word_idx_in_flair_tags + 1:]
+                flair_pos_list = flair_pos_list[word_idx_in_flair_tags + 1:]
 
         raise ValueError(
             f"Did not find word from index {desired_word_idx} in flair POS tag"
@@ -179,8 +179,8 @@ class AttackedText:
             if word_idx == desired_word_idx:
                 return flair_ner_list[word_idx_in_flair_tags]
             else:
-                flair_word_list = flair_word_list[word_idx_in_flair_tags + 1 :]
-                flair_ner_list = flair_ner_list[word_idx_in_flair_tags + 1 :]
+                flair_word_list = flair_word_list[word_idx_in_flair_tags + 1:]
+                flair_ner_list = flair_ner_list[word_idx_in_flair_tags + 1:]
 
         raise ValueError(
             f"Did not find word from index {desired_word_idx} in flair POS tag"
@@ -327,10 +327,10 @@ class AttackedText:
     def get_deletion_indices(self) -> Iterable[int]:
         return self.attack_attrs["original_index_map"][
             self.attack_attrs["original_index_map"] == -1
-        ]
+            ]
 
     def replace_words_at_indices(
-        self, indices: Iterable[int], new_words: Iterable[str]
+            self, indices: Iterable[int], new_words: Iterable[str]
     ) -> AttackedText:
         """Returns a new AttackedText object where the word at ``index`` is
         replaced with a new word."""
@@ -418,9 +418,9 @@ class AttackedText:
             word_end = word_start + len(input_word)
             perturbed_text += original_text[:word_start]
             original_text = original_text[word_end:]
-            adv_words = words_from_text(adv_word_seq)
+            adv_words = self.tokenizer(adv_word_seq)
             adv_num_words = len(adv_words)
-            num_words_diff = adv_num_words - len(words_from_text(input_word))
+            num_words_diff = adv_num_words - len(self.tokenizer(input_word))
             # Track indices on insertions and deletions.
             if num_words_diff != 0:
                 # Re-calculated modified indices. If words are inserted or deleted,
@@ -486,7 +486,7 @@ class AttackedText:
         return float(np.sum(self.words != x.words)) / self.num_words
 
     def align_with_model_tokens(
-        self, model_wrapper: textattack.models.wrappers.ModelWrapper
+            self, model_wrapper: textattack.models.wrappers.ModelWrapper
     ) -> Dict[int, Iterable[int]]:
         """Align AttackedText's `words` with target model's tokenization scheme
         (e.g. word, character, subword). Specifically, we map each word to list
@@ -510,7 +510,7 @@ class AttackedText:
                 token = tokens[j].lower()
                 idx = word.lower().find(token)
                 if idx == 0:
-                    word = word[idx + len(token) :]
+                    word = word[idx + len(token):]
                     matched_tokens.append(j)
                     last_matched = j
                 j += 1
@@ -546,14 +546,14 @@ class AttackedText:
         """Returns a list of lists of words corresponding to each input."""
         if not self._words_per_input:
             self._words_per_input = [
-                words_from_text(_input) for _input in self._text_input.values()
+                self.tokenizer(_input) for _input in self._text_input.values()
             ]
         return self._words_per_input
 
     @property
     def words(self) -> List[str]:
         if not self._words:
-            self._words = words_from_text(self.text)
+            self._words = self.tokenizer(self.text)
         return self._words
 
     @property
@@ -568,6 +568,10 @@ class AttackedText:
     def num_words(self) -> int:
         """Returns the number of words in the sequence."""
         return len(self.words)
+
+    @property
+    def tokenizer(self) -> Callable[[str], list[str]]:
+        return words_from_text
 
     @property
     def newly_swapped_words(self) -> List[str]:

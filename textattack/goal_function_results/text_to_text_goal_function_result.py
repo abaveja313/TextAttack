@@ -41,7 +41,7 @@ class TextToTextGoalFunctionResult(GoalFunctionResult):
 
     def get_text_color_perturbed(self):
         """A string representing the color this result's changed portion should
-        be if it represents the perturbed input."""
+        be iAf it represents the perturbed input."""
         return "blue"
 
     def get_colored_output(self, color_method=None):

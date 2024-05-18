@@ -8,8 +8,8 @@ def remove_pass(*, inputs: List[str]) -> List[str]:
     results = []
     for prompt in inputs:
         prompt_lines = prompt.strip().splitlines()
-        if len(prompt_lines) > 0 and prompt_lines[-1].strip() == 'pass':
-            results.append('\n'.join(prompt_lines[:-1]))
+        if len(prompt_lines) > 0 and prompt_lines[-1].strip() == "pass":
+            results.append("\n".join(prompt_lines[:-1]))
         else:
             results.append(prompt)
 
@@ -45,14 +45,14 @@ def normalize_indentation(code: str) -> str:
         else:
             normalized_spaces = (leading_space_count // b) * 4
 
-        return ' ' * normalized_spaces + stripped_line
+        return " " * normalized_spaces + stripped_line
 
     if a != 0:
-        lines = [line[a:] if line.startswith(' ' * a) else line for line in lines]
+        lines = [line[a:] if line.startswith(" " * a) else line for line in lines]
 
     normalized_lines = [normalize_line(line) for line in lines]
-    indented_lines = ['    ' + line for line in normalized_lines]
-    return '\n'.join(indented_lines)
+    indented_lines = ["    " + line for line in normalized_lines]
+    return "\n".join(indented_lines)
 
 
 def remove_comments_and_docstrings(source, remove_docstrings=False):
@@ -80,7 +80,11 @@ def remove_comments_and_docstrings(source, remove_docstrings=False):
 
         if token_type == tokenize.COMMENT:
             pass
-        elif token_type == tokenize.STRING and remove_docstrings and prev_toktype == tokenize.INDENT:
+        elif (
+            token_type == tokenize.STRING
+            and remove_docstrings
+            and prev_toktype == tokenize.INDENT
+        ):
             pass
         else:
             out += token_string
@@ -92,7 +96,10 @@ def remove_comments_and_docstrings(source, remove_docstrings=False):
     cleaned_lines = [line.rstrip() for line in out.splitlines() if line.strip()]
     if cleaned_lines:
         base_indentation = len(cleaned_lines[0]) - len(cleaned_lines[0].lstrip())
-        cleaned_lines = [(line[base_indentation:] if len(line) > base_indentation else line) for line in cleaned_lines]
+        cleaned_lines = [
+            (line[base_indentation:] if len(line) > base_indentation else line)
+            for line in cleaned_lines
+        ]
     return "\n".join(cleaned_lines)
 
 
@@ -100,7 +107,9 @@ def extract_function_parts(code: str, function_name: str = None):
     parsed_code = ast.parse(code)
     func_node = None
     for node in parsed_code.body:
-        if isinstance(node, ast.FunctionDef) and (function_name is None or node.name == function_name):
+        if isinstance(node, ast.FunctionDef) and (
+            function_name is None or node.name == function_name
+        ):
             func_node = node
             break
 
@@ -115,18 +124,25 @@ def extract_function_parts(code: str, function_name: str = None):
     docstring = ast.get_docstring(func_node)
     if docstring:
         docstring_lines = docstring.splitlines()
-        indented_docstring = '\n'.join(['    ' + line for line in docstring_lines])
+        indented_docstring = "\n".join(["    " + line for line in docstring_lines])
         indented_docstring = f'    """{indented_docstring}\n    """'  # Properly format and indent multiline docstrings
     else:
         indented_docstring = ""
 
-    func_body_with_comments = "\n".join(func_code_lines[func_start_line + 1:func_end_line])
-    func_body = remove_comments_and_docstrings(func_body_with_comments, remove_docstrings=True)
-    func_body = "\n    ".join(func_body.splitlines())  # Correctly indent all lines of the body
+    func_body_with_comments = "\n".join(
+        func_code_lines[func_start_line + 1 : func_end_line]
+    )
+    func_body = remove_comments_and_docstrings(
+        func_body_with_comments, remove_docstrings=True
+    )
+    func_body = "\n    ".join(
+        func_body.splitlines()
+    )  # Correctly indent all lines of the body
 
     function_parts = {
-        "declaration": func_declaration_line + ("\n" + indented_docstring if indented_docstring else ""),
-        "body": "    " + func_body.replace('\n\n', '\n')  # Add initial indentation
+        "declaration": func_declaration_line
+        + ("\n" + indented_docstring if indented_docstring else ""),
+        "body": "    " + func_body.replace("\n\n", "\n"),  # Add initial indentation
     }
     return function_parts
 
@@ -134,8 +150,8 @@ def extract_function_parts(code: str, function_name: str = None):
 def parse_stem(old_code: str, new_code: str, function_name: str = None):
     old_parts = extract_function_parts(old_code, function_name=function_name)
     new_parts = extract_function_parts(new_code, function_name=function_name)
-    old_lines = old_parts['body'].splitlines()
-    new_lines = new_parts['body'].splitlines()
+    old_lines = old_parts["body"].splitlines()
+    new_lines = new_parts["body"].splitlines()
 
     for i, (old_line, new_line) in enumerate(zip(old_lines, new_lines)):
         if old_line != new_line:
@@ -143,16 +159,32 @@ def parse_stem(old_code: str, new_code: str, function_name: str = None):
     else:
         return f"{new_parts['declaration']}\n{new_parts['body']}"
 
-    if i == len(old_lines) - 1 and i == len(new_lines) - 1 and old_lines[i] == new_lines[i]:
+    if (
+        i == len(old_lines) - 1
+        and i == len(new_lines) - 1
+        and old_lines[i] == new_lines[i]
+    ):
         return f"{new_parts['declaration']}\n{new_parts['body']}"
 
-    new_func_split = '\n'.join(new_lines[:i + 1])
+    new_func_split = "\n".join(new_lines[: i + 1])
     last_line = new_lines[i]
 
-    statement_keywords = ['try', 'if', 'for', 'while', 'def', 'except', 'with', 'else', 'finally', 'elif', 'class']
+    statement_keywords = [
+        "try",
+        "if",
+        "for",
+        "while",
+        "def",
+        "except",
+        "with",
+        "else",
+        "finally",
+        "elif",
+        "class",
+    ]
     if any(last_line.lstrip().startswith(keyword) for keyword in statement_keywords):
-        indent = ' ' * (len(last_line) - len(last_line.lstrip()) + 4)
-        pass_statement = f'\n{indent}pass'
+        indent = " " * (len(last_line) - len(last_line.lstrip()) + 4)
+        pass_statement = f"\n{indent}pass"
         new_func_split += pass_statement
 
     return f"{new_parts['declaration']}\n{new_func_split}"

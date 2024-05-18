@@ -26,7 +26,9 @@ def find_centroid_program(codes: List[str]) -> str:
             similarity_matrix[j][i] = similarity  # Symmetric matrix
 
     # Calculate the average similarity for each program
-    average_similarities = [sum(similarities) / (n - 1) for similarities in similarity_matrix]
+    average_similarities = [
+        sum(similarities) / (n - 1) for similarities in similarity_matrix
+    ]
 
     # Find the index of the program with the maximum average similarity
     centroid_index = max(range(n), key=lambda i: average_similarities[i])

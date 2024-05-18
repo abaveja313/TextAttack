@@ -42,10 +42,10 @@ class PythonProcessor(LangProcessor):
             try:
                 toktype, tok, _, _, line = next(iterator)
             except (
-                    tokenize.TokenError,
-                    IndentationError,
-                    SyntaxError,
-                    UnicodeDecodeError,
+                tokenize.TokenError,
+                IndentationError,
+                SyntaxError,
+                UnicodeDecodeError,
             ) as e:
                 raise ValueError(
                     f'Impossible to parse tokens because of incorrect source code "{e}" ...'
@@ -141,7 +141,7 @@ class PythonProcessor(LangProcessor):
                 line = line.replace("INDENT ", tabs)
             elif line.startswith("DEDENT"):
                 number_dedent = line.count("DEDENT")
-                tabs = tabs[4 * number_dedent:]
+                tabs = tabs[4 * number_dedent :]
                 line = line.replace("DEDENT", "")
                 line = line.strip()
                 line = tabs + line
@@ -154,7 +154,7 @@ class PythonProcessor(LangProcessor):
         # find string and comment with parser and detokenize string correctly
         try:
             for toktype, tok, _, _, line in tokenize.tokenize(
-                    BytesIO(untok_s.encode("utf-8")).readline
+                BytesIO(untok_s.encode("utf-8")).readline
             ):
                 if toktype == tokenize.STRING or toktype == tokenize.COMMENT:
                     tok_ = (
@@ -195,15 +195,15 @@ class PythonProcessor(LangProcessor):
 
         def filter_functions_python_2_3(function):
             if (
-                    re.search("print [^(]", function) is None
-                    and re.search("raise \w+ ,", function) is None
-                    and re.search("except \w+ ,", function) is None
-                    and re.search("[^ ]+ = \d+ L", function) is None
-                    and ". iterkeys ( )" not in function
-                    and ". itervalues ( )" not in function
-                    and ". iteritems ( )" not in function
-                    and "xrange (" not in function
-                    and "imap (" not in function
+                re.search("print [^(]", function) is None
+                and re.search("raise \w+ ,", function) is None
+                and re.search("except \w+ ,", function) is None
+                and re.search("[^ ]+ = \d+ L", function) is None
+                and ". iterkeys ( )" not in function
+                and ". itervalues ( )" not in function
+                and ". iteritems ( )" not in function
+                and "xrange (" not in function
+                and "imap (" not in function
             ):
                 return function
             else:

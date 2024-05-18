@@ -1,7 +1,10 @@
 import ast
 from typing import Type
 
-from textattack.transformations.code_transformations.mutation import OneByOneVisitor, OneByOneTransformer
+from textattack.transformations.code_transformations.mutation import (
+    OneByOneVisitor,
+    OneByOneTransformer,
+)
 
 
 class ForToWhileVisitor(OneByOneVisitor):
@@ -10,10 +13,12 @@ class ForToWhileVisitor(OneByOneVisitor):
         return "ForToWhile"
 
     def is_transformable(self, node):
-        return (isinstance(node, ast.For) and
-                isinstance(node.iter, ast.Call) and
-                isinstance(node.iter.func, ast.Name) and
-                node.iter.func.id == 'range')
+        return (
+            isinstance(node, ast.For)
+            and isinstance(node.iter, ast.Call)
+            and isinstance(node.iter.func, ast.Name)
+            and node.iter.func.id == "range"
+        )
 
     def transform_node(self, node) -> list[ast.AST] | ast.AST:
         range_args = node.iter.args
@@ -29,23 +34,40 @@ class ForToWhileVisitor(OneByOneVisitor):
 
         index_var = node.target.id
         init_assign = ast.Assign(
-            targets=[ast.Name(id=index_var, ctx=ast.Store(), lineno=node.lineno, col_offset=node.col_offset)],
+            targets=[
+                ast.Name(
+                    id=index_var,
+                    ctx=ast.Store(),
+                    lineno=node.lineno,
+                    col_offset=node.col_offset,
+                )
+            ],
             value=start,
             lineno=node.lineno,
-            col_offset=node.col_offset
+            col_offset=node.col_offset,
         )
 
         condition = ast.Compare(
-            left=ast.Name(id=index_var, ctx=ast.Load(), lineno=node.lineno, col_offset=node.col_offset),
+            left=ast.Name(
+                id=index_var,
+                ctx=ast.Load(),
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+            ),
             ops=[ast.Lt()],
             comparators=[stop],
             lineno=node.lineno,
-            col_offset=node.col_offset
+            col_offset=node.col_offset,
         )
 
         while_body = [ast.Pass(lineno=node.lineno, col_offset=node.col_offset)]
-        new_while = ast.While(test=condition, body=while_body, orelse=[], lineno=node.lineno,
-                              col_offset=node.col_offset)
+        new_while = ast.While(
+            test=condition,
+            body=while_body,
+            orelse=[],
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+        )
 
         return ast.Module(body=[init_assign, new_while], type_ignores=[])
 

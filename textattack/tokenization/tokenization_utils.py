@@ -52,9 +52,9 @@ def process_string(tok, char2tok, tok2char, is_comment, do_whole_processing=True
         )
         tok = (
             tok.replace(" ▁ ", " ")
-                .replace(" TABSYMBOL ", "\t")
-                .replace("\\r", "")
-                .replace(" STRNEWLINE ", "\\n")
+            .replace(" TABSYMBOL ", "\t")
+            .replace("\\r", "")
+            .replace(" STRNEWLINE ", "\\n")
         )
         return tok
 
@@ -91,8 +91,8 @@ def replace_tokens(tok, dictionary):
 def replace_general_string_tok(tok):
     return (
         tok.replace(" ", " ▁ ")
-            .replace("\n", " STRNEWLINE ")
-            .replace("\t", " TABSYMBOL ")
+        .replace("\n", " STRNEWLINE ")
+        .replace("\t", " TABSYMBOL ")
     )
 
 

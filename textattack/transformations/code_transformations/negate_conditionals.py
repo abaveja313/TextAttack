@@ -1,7 +1,10 @@
 import ast
 from typing import Type
 
-from textattack.transformations.code_transformations.mutation import OneByOneVisitor, OneByOneTransformer
+from textattack.transformations.code_transformations.mutation import (
+    OneByOneVisitor,
+    OneByOneTransformer,
+)
 
 
 class NegateConditionalVisitor(OneByOneVisitor):
@@ -26,20 +29,12 @@ class NegateConditionalVisitor(OneByOneVisitor):
         collect_conditions(node.orelse)
 
         negated_condition = ast.UnaryOp(
-            op=ast.Not(),
-            operand=ast.BoolOp(
-                op=ast.Or(),
-                values=conditions
-            )
+            op=ast.Not(), operand=ast.BoolOp(op=ast.Or(), values=conditions)
         )
 
         pass_node = ast.Pass()
 
-        return ast.If(
-            test=negated_condition,
-            body=[pass_node],
-            orelse=[]
-        )
+        return ast.If(test=negated_condition, body=[pass_node], orelse=[])
 
 
 class NegateConditionalTransformer(OneByOneTransformer):

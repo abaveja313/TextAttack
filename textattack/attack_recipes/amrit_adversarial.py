@@ -12,7 +12,11 @@ from textattack.constraints.pre_transformation import (
     StopwordModification,
 )
 from textattack.goal_functions import TestcaseFailOutputGoalFunction
-from textattack.search_methods import BeamSearch
+from textattack.search_methods import (
+    BeamSearch,
+    ParticleSwarmOptimization,
+    ImprovedGeneticAlgorithm,
+)
 from textattack.shared.attacked_code import AttackedCode
 from textattack.transformations import *
 
@@ -34,9 +38,8 @@ class AmritAdversarialAttack(AttackRecipe):
         #
         # Goal is non-overlapping output.
         #
-        goal_function = TestcaseFailOutputGoalFunction(
-            model_wrapper
-        )
+        goal_function = TestcaseFailOutputGoalFunction(model_wrapper, maximizable=True)
+
         transformation = CompositeTransformation(
             transformations=[
                 VariableSwitchingTransformer(),
@@ -44,7 +47,8 @@ class AmritAdversarialAttack(AttackRecipe):
                 MathInversionTransformer(),
                 ForToWhileTransformer(),
                 NegateConditionalTransformer(),
-                StringConcatToJoinTransformer()
+                StringConcatToJoinTransformer(),
+                # PrintInjectionTransformer()
             ]
         )
         # transformation = WordSwapEmbedding()
@@ -60,12 +64,12 @@ class AmritAdversarialAttack(AttackRecipe):
         #
         # Greedily swap words with "Word Importance Ranking".
         #
-        search_method = BeamSearch(beam_width=4)
+        search_method = BeamSearch(beam_width=16)
 
         return Attack(
             goal_function,
             constraints,
             transformation,
             search_method,
-            attack_obj=AttackedCode
+            attack_obj=AttackedCode,
         )

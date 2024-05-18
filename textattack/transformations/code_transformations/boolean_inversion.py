@@ -1,7 +1,10 @@
 import ast
 from typing import Type
 
-from textattack.transformations.code_transformations.mutation import OneByOneVisitor, OneByOneTransformer
+from textattack.transformations.code_transformations.mutation import (
+    OneByOneVisitor,
+    OneByOneTransformer,
+)
 
 
 class BooleanInversionVisitor(OneByOneVisitor):
@@ -10,9 +13,11 @@ class BooleanInversionVisitor(OneByOneVisitor):
         return "BooleanTransformer"
 
     def is_transformable(self, node):
-        return (isinstance(node, ast.If) or
-                isinstance(node, ast.While) or
-                (isinstance(node, ast.Assign) and self.is_boolean_assignment(node)))
+        return (
+                isinstance(node, ast.If)
+                or isinstance(node, ast.While)
+                or (isinstance(node, ast.Assign) and self.is_boolean_assignment(node))
+        )
 
     def transform_expression(self, node: ast.expr):
         if isinstance(node, ast.Compare):
@@ -22,7 +27,9 @@ class BooleanInversionVisitor(OneByOneVisitor):
         elif isinstance(node, ast.BoolOp):
             demorgan_expr = self.apply_de_morgans_law(node)
             return demorgan_expr
-        elif isinstance(node, ast.UnaryOp) and isinstance(node.operand, (ast.BoolOp, ast.Compare)):
+        elif isinstance(node, ast.UnaryOp) and isinstance(
+                node.operand, (ast.BoolOp, ast.Compare)
+        ):
             simplified_expr = self.simplify_negation(node)
             return simplified_expr
         else:
@@ -37,7 +44,8 @@ class BooleanInversionVisitor(OneByOneVisitor):
             node.value = self.transform_expression(node.value)
         return [node]
 
-    def is_boolean_assignment(self, node):
+    @staticmethod
+    def is_boolean_assignment(node):
         if isinstance(node.value, ast.UnaryOp) and isinstance(node.value.op, ast.Not):
             return True
         elif isinstance(node.value, ast.Compare):
@@ -53,7 +61,9 @@ class BooleanInversionVisitor(OneByOneVisitor):
         else:
             new_op = ast.And()
         new_values = [ast.UnaryOp(op=ast.Not(), operand=v) for v in expr.values]
-        return ast.UnaryOp(op=ast.Not(), operand=ast.BoolOp(op=new_op, values=new_values))
+        return ast.UnaryOp(
+            op=ast.Not(), operand=ast.BoolOp(op=new_op, values=new_values)
+        )
 
     def simplify_negation(self, expr):
         if isinstance(expr.operand, ast.BoolOp):
@@ -90,21 +100,30 @@ class BooleanInversionVisitor(OneByOneVisitor):
                     new_ops.append(ast.Gt())
                 elif isinstance(op, ast.GtE):
                     new_ops.append(ast.Lt())
-            return ast.Compare(left=expr.left, ops=new_ops, comparators=expr.comparators)
+            return ast.Compare(
+                left=expr.left, ops=new_ops, comparators=expr.comparators
+            )
 
     def apply_double_negation(self, expr):
         # Apply double negation for truthy/falsy expressions
-        return ast.UnaryOp(op=ast.Not(), operand=ast.UnaryOp(op=ast.Not(), operand=expr))
+        return ast.UnaryOp(
+            op=ast.Not(), operand=ast.UnaryOp(op=ast.Not(), operand=expr)
+        )
 
     def invert(self, expr):
         if isinstance(expr, ast.UnaryOp) and isinstance(expr.op, ast.Not):
             # Correctly handle 'a is False' to 'not (a is not False)'
-            if isinstance(expr.operand, ast.Compare) and isinstance(expr.operand.ops[0], ast.Is):
-                return ast.UnaryOp(op=ast.Not(), operand=ast.Compare(
-                    left=expr.operand.left,
-                    ops=[ast.IsNot()],
-                    comparators=expr.operand.comparators
-                ))
+            if isinstance(expr.operand, ast.Compare) and isinstance(
+                    expr.operand.ops[0], ast.Is
+            ):
+                return ast.UnaryOp(
+                    op=ast.Not(),
+                    operand=ast.Compare(
+                        left=expr.operand.left,
+                        ops=[ast.IsNot()],
+                        comparators=expr.operand.comparators,
+                    ),
+                )
             else:
                 return expr.operand
         else:

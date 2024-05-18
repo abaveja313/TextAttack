@@ -91,12 +91,12 @@ class ParticleSwarmOptimization(PopulationBasedSearch):
         Returns:
             New `Position` that we moved to (or if we fail to move, same as `source_text`)
         """
-        assert len(source_text.words) == len(
-            target_text.words
-        ), "Word length mismatch for turn operation."
-        assert len(source_text.words) == len(
-            prob
-        ), "Length mismatch for words and probability list."
+        # assert len(source_text.words) == len(
+        #     target_text.words
+        # ), "Word length mismatch for turn operation."
+        # assert len(source_text.words) == len(
+        #     prob
+        # ), "Length mismatch for words and probability list."
         len_x = len(source_text.words)
 
         num_tries = 0

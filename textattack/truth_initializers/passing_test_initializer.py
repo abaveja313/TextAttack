@@ -1,7 +1,10 @@
 import pickle
 import time
 from textattack.truth_initializers.utils import find_centroid_program
-from textattack.shared.utils import remove_comments_and_docstrings, normalize_indentation
+from textattack.shared.utils import (
+    remove_comments_and_docstrings,
+    normalize_indentation,
+)
 from functools import cached_property
 import joblib
 import os
@@ -20,12 +23,17 @@ class NoPassingSolutionException(Exception):
 
 
 class TestPassingInitializer:
-    def __init__(self, model: EvalPlusWrapper, task_id: str, passing_threshold: float = 1.0,
-                 num_samples: int = 300,
-                 batch_size: int = 50,
-                 min_correct_samples: int = 10,
-                 mini=True,
-                 noextreme=False):
+    def __init__(
+        self,
+        model: EvalPlusWrapper,
+        task_id: str,
+        passing_threshold: float = 1.0,
+        num_samples: int = 300,
+        batch_size: int = 50,
+        min_correct_samples: int = 10,
+        mini=True,
+        noextreme=False,
+    ):
 
         if mini and noextreme:
             raise ValueError("Cannot specify both mini=True and noextreme=True")
@@ -38,7 +46,7 @@ class TestPassingInitializer:
         self.num_samples = num_samples
         self.model_wrapper = model
         self.min_correct_samples = min_correct_samples
-        self.cache_dir = 'cache'
+        self.cache_dir = "cache"
 
     @cached_property
     def human_eval(self) -> dict[str, dict]:
@@ -46,7 +54,9 @@ class TestPassingInitializer:
 
     @cached_property
     def ground_truth(self):
-        return get_groundtruth(self.human_eval, get_human_eval_plus_hash(**self.dataset_params), [])
+        return get_groundtruth(
+            self.human_eval, get_human_eval_plus_hash(**self.dataset_params), []
+        )
 
     def batch_generate_sequences(self):
         sequences = []
@@ -56,9 +66,7 @@ class TestPassingInitializer:
             while remaining > 0:
                 to_gen = min(self.batch_size, remaining)
                 samples = self.model_wrapper.model.codegen(
-                    prompt=self.problem['prompt'],
-                    do_sample=True,
-                    num_samples=to_gen
+                    prompt=self.problem["prompt"], do_sample=True, num_samples=to_gen
                 )
                 sequences.extend(samples)
                 pbar.update(to_gen)
@@ -69,10 +77,10 @@ class TestPassingInitializer:
     def postprocess_sequences(self, sequences: list[str]):
         transforms = (
             lambda c: remove_comments_and_docstrings(c, remove_docstrings=True),
-            normalize_indentation
+            normalize_indentation,
         )
         processed = []
-        for sequence in tqdm.tqdm(sequences, desc='Postprocessing Samples'):
+        for sequence in tqdm.tqdm(sequences, desc="Postprocessing Samples"):
             try:
                 result = sequence
                 for transform in transforms:
@@ -85,7 +93,9 @@ class TestPassingInitializer:
         return processed
 
     def find_centroid_solution(self):
-        cache_file = os.path.join(self.cache_dir, f'{self.task_id.replace("/", "_")}.pkl')
+        cache_file = os.path.join(
+            self.cache_dir, f'{self.task_id.replace("/", "_")}.pkl'
+        )
 
         if os.path.exists(cache_file):
             logger.info(f"Loading cached centroid solution for task {self.task_id}")
@@ -97,20 +107,22 @@ class TestPassingInitializer:
         failed_stats = []
 
         for sequence in tqdm.tqdm(sequences, desc="Evaluating Sequences"):
-            full_solution = self.problem['prompt'] + sequence
+            full_solution = self.problem["prompt"] + sequence
             eval_results = check_correctness(
-                dataset='humaneval',
+                dataset="humaneval",
                 completion_id=time.time_ns(),
                 expected_output=self.ground_truth[self.task_id],
                 problem=self.problem,
                 solution=full_solution,
                 base_only=False,
-                gt_time_limit_factor=15.0
+                gt_time_limit_factor=15.0,
             )
 
-            total = eval_results['base'][1] + eval_results['plus'][1]
+            total = eval_results["base"][1] + eval_results["plus"][1]
             if len(total) == 0:
-                logger.warning("No results were found for a syntactically incorrect solution.")
+                logger.warning(
+                    "No results were found for a syntactically incorrect solution."
+                )
                 continue
 
             passed = [i for i in total if i == 1]
@@ -126,12 +138,14 @@ class TestPassingInitializer:
             )
 
         self._print_failure_stats(failed_stats)
-        logger.info(f"Found {len(solutions)} correct solutions. Finding AST + Levenshtein Centroid.")
+        logger.info(
+            f"Found {len(solutions)} correct solutions. Finding AST + Levenshtein Centroid."
+        )
         centroid_solution = find_centroid_program(solutions)
 
         os.makedirs(self.cache_dir, exist_ok=True)
 
-        with open(cache_file, 'wb') as sol:
+        with open(cache_file, "wb") as sol:
             pickle.dump(centroid_solution, sol)
 
         return centroid_solution
@@ -142,6 +156,6 @@ class TestPassingInitializer:
             f"Failure Rate: {round(float(len(fail_rates)) / self.num_samples, 4) * 100}%",
             f"Mean: {np.mean(fail_rates)}",
             f"Median: {np.median(fail_rates)}",
-            f"Stddev: {np.std(fail_rates)}"
+            f"Stddev: {np.std(fail_rates)}",
         ]
-        logger.info('\n'.join(debug_message))
+        logger.info("\n".join(debug_message))

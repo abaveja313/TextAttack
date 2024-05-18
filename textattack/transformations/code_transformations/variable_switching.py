@@ -3,7 +3,10 @@ import random
 import string
 from typing import Type
 
-from textattack.transformations.code_transformations.mutation import OneByOneTransformer, OneByOneVisitor
+from textattack.transformations.code_transformations.mutation import (
+    OneByOneTransformer,
+    OneByOneVisitor,
+)
 
 
 class VariableRenamingVisitor(OneByOneVisitor):
@@ -13,13 +16,17 @@ class VariableRenamingVisitor(OneByOneVisitor):
 
     @staticmethod
     def random_variable_name(k=8):
-        return ast.Name(''.join(random.choices(string.ascii_letters, k=k)))
+        return ast.Name("".join(random.choices(string.ascii_letters, k=k)))
 
     def is_transformable(self, node):
         return (
-                (isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name)) or
-                (isinstance(node, ast.For) and isinstance(node.target, ast.Name)) or
-                (isinstance(node, ast.With) and node.items and isinstance(node.items[0].optional_vars, ast.Name))
+            (isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name))
+            or (isinstance(node, ast.For) and isinstance(node.target, ast.Name))
+            or (
+                isinstance(node, ast.With)
+                and node.items
+                and isinstance(node.items[0].optional_vars, ast.Name)
+            )
         )
 
     def transform_node(self, node) -> list[ast.AST] | ast.AST:
@@ -39,7 +46,7 @@ class VariableSwitchingTransformer(OneByOneTransformer):
     @property
     def visitor(self) -> Type[OneByOneVisitor]:
         return VariableRenamingVisitor
-    
+
     @property
     def deterministic(self):
         return False

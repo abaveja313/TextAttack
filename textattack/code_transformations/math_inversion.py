@@ -1,7 +1,7 @@
 import ast
 from typing import Type
 
-from textattack.transformations.code_transformations.mutation import (
+from textattack.code_transformations.mutation import (
     OneByOneVisitor,
     OneByOneTransformer,
 )

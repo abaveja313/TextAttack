@@ -3,7 +3,7 @@ import random
 import string
 from typing import Type
 
-from textattack.transformations.code_transformations.mutation import (
+from textattack.code_transformations.mutation import (
     OneByOneTransformer,
     OneByOneVisitor,
 )

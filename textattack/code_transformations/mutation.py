@@ -8,6 +8,7 @@ from textattack.shared.attacked_code import AttackedCode
 from textattack.shared.utils import parse_stem
 from textattack.tokenization.ast_tokenizer import ASTTokenizer
 from textattack.transformations import Transformation
+from textattack.code_transformations.registry import RegistedMixin
 
 
 class ASTCopier(ast.NodeTransformer):
@@ -38,7 +39,7 @@ class NodeReplacer(ast.NodeTransformer):
 
     def visit(self, node: ast.AST):
         if isinstance(node, type(self.old_node)) and ast.dump(node) == ast.dump(
-            self.old_node
+                self.old_node
         ):
             return self.new_node
         else:
@@ -48,13 +49,12 @@ class NodeReplacer(ast.NodeTransformer):
 class OneByOneVisitor(ABC, ASTTokenizer):
     def __init__(self, code: str):
         self.transformations: list[ast.AST] = []
-
+        self.source_code = code
         super().__init__(code)
 
     @property
-    @abstractmethod
     def name(self):
-        pass
+        return self.__class__.__name__
 
     @abstractmethod
     def is_transformable(self, node):
@@ -64,9 +64,9 @@ class OneByOneVisitor(ABC, ASTTokenizer):
     def transform_node(self, node) -> list[ast.AST] | ast.AST:
         pass
 
-    def transform(self, indices_to_modify: list[int]) -> list[str]:
+    def transform(self) -> list[str]:
         for i, node in enumerate(ASTTokenizer.dfs_walk(self.ast_tree)):
-            if i in indices_to_modify and self.is_transformable(node):
+            if i in self.is_transformable(node):
                 self.apply_transformations(node)
         return [ast.unparse(tree) for tree in self.transformations]
 
@@ -84,14 +84,19 @@ class OneByOneVisitor(ABC, ASTTokenizer):
             self.transformations.append(perturbed_tree)
 
 
-class OneByOneTransformer(Transformation):
+class PostprocessingTransformer(Transformation, RegistedMixin, ABC):
     @property
     def transformations(self) -> Tuple[Callable[[str, str], str]]:
         return (parse_stem,)
 
     @property
     @abstractmethod
-    def visitor(self) -> Type[OneByOneVisitor]:
+    def deterministic(self):
+        pass
+
+    @property
+    @abstractmethod
+    def attack_func(self) -> Callable[[str], list[str]]:
         pass
 
     def postprocess(self, current: str, targets: list[str]) -> list[str]:
@@ -104,22 +109,36 @@ class OneByOneTransformer(Transformation):
 
         return results
 
-    @property
-    def deterministic(self):
-        return True
-
     def _get_transformations(
-        self, current_text: AttackedCode, indices_to_modify: list[int]
+            self, current_text: AttackedCode, _: list[int]
     ) -> list[AttackedCode]:
         if not isinstance(current_text, AttackedCode):
             raise ValueError("Parameter `current_text` must be of type AttackedCode")
 
         attacked_text: str = current_text.text
-        transformed = self.visitor(attacked_text).transform(indices_to_modify)
+        transformed = self.attack_func(attacked_text)
         post_processed: list[str] = self.postprocess(attacked_text, transformed)
 
         results = [
             current_text.generate_new_attacked_code(output) for output in post_processed
         ]
-        # logger.debug(f"{self.__class__.__name__} produced {len(results)} transformations")
+        logger.debug(f"{self.__class__.__name__} produced {len(results)} transformations")
         return results
+
+
+class OneByOneTransformer(PostprocessingTransformer, ABC):
+    @property
+    def deterministic(self):
+        return True
+
+    @property
+    @abstractmethod
+    def visitor(self) -> Type[OneByOneVisitor]:
+        pass
+
+    def _visit_transform(self, source):
+        return self.visitor(source).transform()
+
+    @property
+    def attack_func(self) -> Callable[[str], list[str]]:
+        return self._visit_transform

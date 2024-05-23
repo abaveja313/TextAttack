@@ -1,4 +1,5 @@
 import ast
+import copy
 import io
 import tokenize
 from typing import List
@@ -81,9 +82,9 @@ def remove_comments_and_docstrings(source, remove_docstrings=False):
         if token_type == tokenize.COMMENT:
             pass
         elif (
-            token_type == tokenize.STRING
-            and remove_docstrings
-            and prev_toktype == tokenize.INDENT
+                token_type == tokenize.STRING
+                and remove_docstrings
+                and prev_toktype == tokenize.INDENT
         ):
             pass
         else:
@@ -108,7 +109,7 @@ def extract_function_parts(code: str, function_name: str = None):
     func_node = None
     for node in parsed_code.body:
         if isinstance(node, ast.FunctionDef) and (
-            function_name is None or node.name == function_name
+                function_name is None or node.name == function_name
         ):
             func_node = node
             break
@@ -130,7 +131,7 @@ def extract_function_parts(code: str, function_name: str = None):
         indented_docstring = ""
 
     func_body_with_comments = "\n".join(
-        func_code_lines[func_start_line + 1 : func_end_line]
+        func_code_lines[func_start_line + 1: func_end_line]
     )
     func_body = remove_comments_and_docstrings(
         func_body_with_comments, remove_docstrings=True
@@ -141,7 +142,7 @@ def extract_function_parts(code: str, function_name: str = None):
 
     function_parts = {
         "declaration": func_declaration_line
-        + ("\n" + indented_docstring if indented_docstring else ""),
+                       + ("\n" + indented_docstring if indented_docstring else ""),
         "body": "    " + func_body.replace("\n\n", "\n"),  # Add initial indentation
     }
     return function_parts
@@ -160,9 +161,9 @@ def parse_stem(old_code: str, new_code: str, function_name: str = None):
         return f"{new_parts['declaration']}\n{new_parts['body']}"
 
     if (
-        i == len(old_lines) - 1
-        and i == len(new_lines) - 1
-        and old_lines[i] == new_lines[i]
+            i == len(old_lines) - 1
+            and i == len(new_lines) - 1
+            and old_lines[i] == new_lines[i]
     ):
         return f"{new_parts['declaration']}\n{new_parts['body']}"
 
@@ -188,3 +189,12 @@ def parse_stem(old_code: str, new_code: str, function_name: str = None):
         new_func_split += pass_statement
 
     return f"{new_parts['declaration']}\n{new_func_split}"
+
+
+def one_by_one(key: str, obj: object):
+    if not hasattr(obj, key):
+        raise ValueError(f"Object {obj} has no field {key}")
+
+    for idx, value in enumerate(getattr(obj, key)):
+        new_obj = copy.deepcopy(obj)
+        yield new_obj, getattr(new_obj, key)[idx]

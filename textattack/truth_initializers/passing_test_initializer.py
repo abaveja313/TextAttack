@@ -1,5 +1,7 @@
 import pickle
 import time
+
+from textattack.truth_initializers.initializer import Initializer
 from textattack.truth_initializers.utils import find_centroid_program
 from textattack.shared.utils import (
     remove_comments_and_docstrings,
@@ -22,7 +24,7 @@ class NoPassingSolutionException(Exception):
     pass
 
 
-class TestPassingInitializer:
+class TestPassingInitializer(Initializer):
     def __init__(
         self,
         model: EvalPlusWrapper,
@@ -39,7 +41,6 @@ class TestPassingInitializer:
             raise ValueError("Cannot specify both mini=True and noextreme=True")
 
         self.dataset_params = dict(mini=mini, noextreme=noextreme)
-        self.task_id = task_id
         self.problem = self.human_eval[task_id]
         self.batch_size = batch_size
         self.passing_threshold = passing_threshold

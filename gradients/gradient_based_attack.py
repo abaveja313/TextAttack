@@ -21,7 +21,7 @@ from transformers import (
     PreTrainedModel,
     BatchEncoding,
 )
-from textattack.transformations.code_transformations.boolean_inversion import BooleanInversionVisitor
+from textattack.code_transformations.boolean_inversion import BooleanInversionVisitor
 from examples import main as generate_examples
 
 

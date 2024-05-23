@@ -1,18 +1,14 @@
 import ast
-import random
-import string
 from typing import Type
 
-from textattack.transformations.code_transformations.mutation import (
+from textattack.code_transformations import CRT
+from textattack.code_transformations.mutation import (
     OneByOneTransformer,
     OneByOneVisitor,
 )
 
 
-class PrintInjectionVisitor(OneByOneVisitor):
-    @property
-    def name(self):
-        return "PrintInjection"
+class PrintInjectionVisitor(OneByOneVisitor, categories=CRT.lexical):
 
     @staticmethod
     def debug_statement():

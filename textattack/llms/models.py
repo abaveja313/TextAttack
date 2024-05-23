@@ -197,8 +197,7 @@ class VllmDecoder(DecoderBase):
             use_tqdm=False,
         )
 
-        gen_strs = [x.text.replace("\t", "    ") for x in vllm_outputs[0].outputs]
-        return gen_strs
+        return vllm_outputs
 
 
 class GeneralVllmDecoder(VllmDecoder):

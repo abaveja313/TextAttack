@@ -79,6 +79,7 @@ class OneByOneVisitor(ABC, ASTTokenizer):
             perturbed_nodes = [perturbed_nodes]
 
         for perturbed in perturbed_nodes:
+            ast.copy_location(node, perturbed)
             new_tree = ASTCopier().visit(self.ast_tree)
             perturbed_tree = NodeReplacer(node, perturbed).visit(new_tree)
             self.transformations.append(perturbed_tree)

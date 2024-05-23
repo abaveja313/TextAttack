@@ -2,10 +2,14 @@ from enum import Enum, auto
 
 
 class CRT(Enum):
-    lexical = auto()
-    syntax = auto()
-    semantics = auto()
-    optimization = auto()
+    code_style = auto()
+    numbers = auto()
+    strings = auto()
+    booleans = auto()
+    arrays = auto()
+    dicts = auto()
+    conditionals = auto()
+    loops = auto()
 
 
 class CodeTransformationRegistry:

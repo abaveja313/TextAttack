@@ -495,7 +495,7 @@ class Trainer:
             tokenizer:
                 Tokenizer used to tokenize input text.
             batch (:obj:`tuple[list[str], torch.Tensor, torch.Tensor]`):
-                By default, this will be a tuple of input texts, targets, and boolean tensor indicating if the sample is an adversarial example.
+                By default, this will be a tuple of input texts, targets, and booleans tensor indicating if the sample is an adversarial example.
 
                 .. note::
                     If you override the :meth:`get_train_dataloader` method, then shape/type of :obj:`batch` will depend on how you created your batch.

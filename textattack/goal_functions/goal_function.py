@@ -25,7 +25,7 @@ class GoalFunction(ReprMixin, ABC):
         model_wrapper (:class:`~textattack.models.wrappers.ModelWrapper`):
             The victim model to attack.
         maximizable(:obj:`bool`, `optional`, defaults to :obj:`False`):
-            Whether the goal function is maximizable, as opposed to a boolean result of success or failure.
+            Whether the goal function is maximizable, as opposed to a booleans result of success or failure.
         query_budget (:obj:`float`, `optional`, defaults to :obj:`float("in")`):
             The maximum number of model queries allowed.
         model_cache_size (:obj:`int`, `optional`, defaults to :obj:`2**20`):
